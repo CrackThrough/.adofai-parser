@@ -1,5 +1,6 @@
 module.exports = {
   skeletons: require("./editor/skeletons"),
   keys: require("./editor/allkeys"),
-  parseFile: require("./editor/parseFile").parse,
+  import: require("./editor/parse").import,
+  export: require("./editor/parse").export,
 };

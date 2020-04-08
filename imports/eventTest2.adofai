@@ -13,7 +13,7 @@
 		"offset": 0, 
 		"pitch": 100, 
 		"hitsound": "Kick", 
-		"hitsoundVolume": 100,
+		"hitsoundVolume": 100, 
 		"trackColorType": "Single", 
 		"trackColor": "debb7b", 
 		"secondaryTrackColor": "ffffff", 

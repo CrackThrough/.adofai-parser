@@ -1,9 +1,10 @@
 const adofai = require("./index");
 
 async function getMap(file) {
-  return await adofai.parseFile(file).then(
+  return await adofai.import(file, true).then(
     (map) => {
-      console.log(map);
+      adofai.export("./exports/ultra-blazuresConvert.adofai", map);
+      console.log("done!");
     },
     (err) => {
       throw Error(err);
@@ -11,4 +12,4 @@ async function getMap(file) {
   );
 }
 
-getMap("./adofai files/eventTest2.adofai");
+getMap("./imports/ultra-blazures.adofai");
