@@ -1,5 +1,5 @@
 // require over .adofai-parser
-const adofai = require("../index");
+const adofai = require("adofai-parser");
 
 // defining map and keys alternatively
 var map = adofai.map,

@@ -1,5 +1,5 @@
 // require over .adofai-parser
-const adofai = require("../index");
+const adofai = require("adofai-parser");
 
 // import with callback
 adofai.import("./imports/test.adofai", (_callback, err) => {
