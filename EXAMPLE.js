@@ -1,15 +1,24 @@
 const adofai = require("./index");
 
-async function getMap(file) {
-  return await adofai.import(file, true).then(
-    (map) => {
-      adofai.export("./exports/ultra-blazuresConvert.adofai", map);
-      console.log("done!");
-    },
-    (err) => {
-      throw Error(err);
-    }
-  );
-}
+var adofaiOptions = {
+  verboseLevel: 0,
+};
 
-getMap("./imports/ultra-blazures.adofai");
+adofai.import(
+  "./imports/filename.adofai",
+  (_callback1, err) => {
+    if (err) throw err;
+    else console.log(`File reading successful, took ${_callback1.time}ms!`);
+
+    adofai.export(
+      "./exports/filename.adofai",
+      _callback1.map,
+      (_callback2, err) => {
+        if (err) throw err;
+        else
+          console.log(`File exporting successful, took ${_callback2.time}ms!`);
+      }
+    );
+  },
+  adofaiOptions
+);

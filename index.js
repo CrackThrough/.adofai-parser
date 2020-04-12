@@ -1,6 +1,5 @@
 module.exports = {
-  skeletons: require("./editor/skeletons"),
-  keys: require("./editor/allkeys"),
+  adofaiMap: require("./editor/mapSkel"),
   import: require("./editor/parse").import,
   export: require("./editor/parse").export,
 };

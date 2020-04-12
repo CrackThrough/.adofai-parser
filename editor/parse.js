@@ -1,282 +1,272 @@
-const lineReader = require("line-reader");
-const keys = require("./allkeys");
+const readline = require("readline");
 const fs = require("fs");
 
 module.exports = {
-  import: function (file, ignoreError) {
-    return new Promise((resolve, reject) => {
-      ignoreError = ignoreError != null;
-      var map = require("./skeletons").map;
+  /**
+   * Imports a .adofai map file
+   * @param {path} file
+   * @param {callback} callback
+   */
+  import: function (file, callback, options) {
+    if (options == null) options = { verboseLevel: 0 };
 
-      var progress = {
-        lineCount: 0,
-        foundActions: false,
-        foundSettings: false,
-        inActions: false,
-        fullfile: "",
-        wasColorHistory: [],
+    // variables
+    var timeStarted = new Date().getTime();
+    var timeEnded = NaN;
+    var mapData = "";
+    var runEvent = true;
+    var lineCount = 0;
+    var _chars = ['"', "{", "}", "[", "]", ",", ":"];
+    var _isQuoteOpen = false;
+    var _getValue = false;
+
+    // check file
+    if (!fs.existsSync(file)) {
+      runEvent = false;
+      timeEnded = new Date().getTime();
+      var $callback = {
+        time: timeEnded - timeStarted,
+        map: null,
       };
+      return callback($callback, Error(`File '${file}' does not exist`));
+    }
 
-      lineReader.eachLine(file, function (line, last) {
-        progress.lineCount++;
-        var rawline = line;
-        var valueAsString = false;
-
-        if (!line.includes("[") && !progress.foundActions) {
-          line = line.replace(/[﻿ 	,"]/g, "");
-        } else if (!progress.foundActions && progress.foundSettings) {
-          line = line.replace(/[﻿ 	"]/g, "").substr(0, line.length - 8);
-        }
-
-        if (line.includes("settings:")) progress.foundSettings = true;
-        if (line.includes("actions:")) progress.foundActions = true;
-        if (!progress.foundActions) {
-          if (!line.includes("pathData") && progress.foundSettings) {
-            if (
-              line.split(":")[1] != undefined &&
-              !line.includes("settings:")
-            ) {
-              setValueRaw = eval(`"${line.split(":")[0]}"`);
-              isTypeColor = keys._hexKeys.includes(setValueRaw);
-              if (isTypeColor) {
-                progress.wasColorHistory.push(true);
-              } else {
-                progress.wasColorHistory.push(false);
-              }
-
-              if (line.split(":")[1] == "") {
-                var value = "### EMPTY STRING ###";
-              } else {
-                var value = line.split(":")[1];
-              }
-              if (
-                line.split(":")[1].indexOf("[") <
-                line.split(":")[1].indexOf("]")
-              ) {
-                value = line.split(":")[1];
-              } else if (value == "Enabled" || value == "Disabled") {
-                value = value == "Enabled";
-              } else if (value.toString().startsWith("[")) {
-                value = eval(value);
-              } else if (!isTypeColor && !isNaN(Number(value))) {
-                value = Number(value);
-              } else {
-                valueAsString = true;
-              }
-              if (value == "false" || value == "true") {
-                value = value == "true";
-                valueAsString = false;
-              }
-              setValue = eval(`"map.settings.${line.split(":")[0]}"`);
-              setValueRaw = eval(`"${line.split(":")[0]}"`);
-              isTypeColor = keys._hexKeys.includes(setValueRaw);
-              if (isTypeColor) {
-                progress.wasColorHistory.push(true);
-              } else {
-                progress.wasColorHistory.push(false);
-              }
-
-              if (value == "### EMPTY STRING ###") {
-                eval(`${setValue} = ""`);
-              } else if (isTypeColor) {
-                if (value == undefined) value = "000000";
-                value = value + "";
-                value = value.substr(0, 6);
-                while (value.length != 6) {
-                  value = value.repeat(value.length + 1);
-                }
-                eval(`${setValue} = "${value}"`);
-              } else if (valueAsString) {
-                if (!keys._numberKeys.includes(setValueRaw)) {
-                  if (value == 0) {
-                    eval(`${setValue} = ""`);
-                  } else {
-                    eval(`${setValue} = "${value}"`);
-                  }
-                } else {
-                  eval(`${setValue} = ${value}`);
-                }
-              } else {
-                if (typeof value == "boolean") {
-                  eval(`${setValue} = ${value == "true" || value == true}`);
-                } else {
-                  eval(`${setValue} = ${value}`);
-                }
-              }
-            }
-          } else {
-            if (line.split(":")[1] != null) {
-              eval(`map.${line.split(":")[0]} = "${line.split(":")[1]}"`);
-            }
-          }
-        } else if (!line.includes("actions:")) {
-          line = line.replace(/[﻿ 	"]/g, "");
-          if (line == "[") {
-            progress.inActions = true;
-          } else if (line == "]") {
-            progress.inActions = false;
-          } else if (progress.inActions) {
-            var event = {};
-            var eventLine = line;
-            if (eventLine.includes("[")) {
-              var eventLineSplit = [];
-              while (eventLine.includes("[")) {
-                var open = eventLine.indexOf("[");
-                var close = eventLine.indexOf("]");
-                var split = eventLine.indexOf(",");
-                if (split < open) {
-                  eventLineSplit.push(eventLine.substr(0, split));
-                  eventLine = eventLine.substr(split + 1, eventLine.length);
-                } else if (split > close) {
-                  eventLineSplit.push(eventLine.substr(0, split));
-                  eventLine = eventLine.substr(split + 1, eventLine.length);
-                } else if (open < split && split < close) {
-                  eventLine = eventLine.replace(
-                    ",",
-                    "###thisisatemporarytextjusttoreplaceacommaitsgonnaberolledbacktocommajustsoon###"
-                  );
-                  eventLine = eventLine.substr(0, eventLine.length);
-                } else if (
-                  (open > -1 && close == -1) ||
-                  (open == -1 && close > -1)
-                ) {
-                  reject(
-                    new Error(
-                      `File has misplaced bracket at line ${progress.lineCount}`
-                    )
-                  );
-                }
-              }
-              var RestEventLine = eventLine.split(",");
-              RestEventLine.forEach((ev) => {
-                eventLineSplit.push(ev);
-              });
-              var anotherEventLineSplit = [];
-              eventLineSplit.forEach((thisline) => {
-                thisline = thisline.replace(
-                  /(\#\#\#thisisatemporarytextjusttoreplaceacommaitsgonnaberolledbacktocommajustsoon\#\#\#)/g,
-                  ","
-                );
-                anotherEventLineSplit.push(thisline);
-              });
-              eventLineSplit = anotherEventLineSplit;
-            } else {
-              var eventLineSplit = eventLine.split(",");
-            }
-            eventLineSplit.forEach((thisline) => {
-              thisline = thisline.replace(/[{}]/g, "").split(":");
-
-              setValue = eval(`"event.${thisline[0]}"`);
-              setValueRaw = eval(`"${thisline[0]}"`);
-              isTypeColor = keys._hexKeys.includes(setValueRaw);
-              if (isTypeColor) {
-                progress.wasColorHistory.push(true);
-              } else {
-                progress.wasColorHistory.push(false);
-              }
-
-              if (thisline.length == 2) {
-                thislineValue = thisline[1];
-                if (thislineValue == "### EMPTY STRING ###") {
-                  eval(`${setValue} = ""`);
-                } else if (isTypeColor) {
-                  if (thislineValue == undefined) thislineValue = "000000";
-                  thislineValue = thislineValue + "";
-                  thislineValue = thislineValue.substr(0, 6);
-                  while (thislineValue.length != 6) {
-                    thislineValue = thislineValue.repeat(
-                      thislineValue.length + 1
-                    );
-                  }
-                  eval(`${setValue} = "${thislineValue}"`);
-                } else if (keys._numberKeys.includes(setValueRaw)) {
-                  eval(`${setValue} = ${thislineValue}`);
-                } else if (
-                  thislineValue.includes("Enabled") ||
-                  thisline.includes("Disabled")
-                ) {
-                  eval(`${setValue} = ${thislineValue.includes("Enabled")}`);
-                } else if (
-                  thislineValue.includes("[") &&
-                  thislineValue.includes("]")
-                ) {
-                  var arr = thislineValue.replace(/[\[\]]/g, "").split(",");
-                  if (isNaN(Number(arr[0])) && isNaN(Number(arr[1]))) {
-                    eval(`${setValue} = [ "${arr[0]}", "${arr[1]}" ]`);
-                  } else if (isNaN(Number(arr[0])) && !isNaN(Number(arr[1]))) {
-                    eval(`${setValue} = [ "${arr[0]}", ${arr[1]} ]`);
-                  } else if (!isNaN(Number(arr[0])) && isNaN(Number(arr[1]))) {
-                    eval(`${setValue} = [ ${arr[0]}, "${arr[1]}" ]`);
-                  } else {
-                    eval(`${setValue} = ${thislineValue}`);
-                  }
-                } else {
-                  if (thislineValue == 0) {
-                    eval(`${setValue} = ""`);
-                  } else {
-                    eval(`${setValue} = "${thislineValue}"`);
-                  }
-                }
-              }
-            });
-            map.actions.push(event);
-          }
-        }
-
-        progress.fullfile += rawline + "\n";
-        if (last) {
-          if (ignoreError) {
-            return resolve(map);
-          } else {
-            keys._map.forEach((key) => {
-              if (!progress.fullfile.includes(key))
-                reject(new Error(`File does not have a key "${key}"`));
-            });
-          }
-          return resolve(map);
-        }
-      });
+    // read file
+    var rl = readline.createInterface({
+      input: fs.createReadStream(file),
+      terminal: false,
     });
-  },
-  export: function (location, parsedData) {
-    return new Promise((resolve, reject) => {
-      try {
-        var data = JSON.stringify(parsedData);
-        data = data
-          .replace(/(},{)/g, "},\n		{")
-          .replace('{"pathData":"', '{\n	"pathData":"');
 
-        var execute = true;
+    rl.on("line", (line) => {
+      lineCount++;
+      if (options.verboseLevel > 0) {
+        console.log(`\nLine ${lineCount} |`, line);
+      }
 
-        while (execute) {
-          var actionsIndex = data.indexOf('"actions":[') + '"actions":['.length;
-          var settingsIndex =
-            data.indexOf('"settings":{') + '"settings":{'.length;
-          if (data.indexOf(',"') < settingsIndex) {
-            data = data.replace(/(,")/, ',\n	"');
-          } else if (data.indexOf(',"') < actionsIndex) {
-            data = data.replace(/(,")/, ',\n		"');
-          } else execute = false;
+      var charOrder = "";
+      var charList = [];
+      var lastIndex = -1;
+
+      while (true) {
+        var indexList = [];
+        if (_isQuoteOpen) {
+          // char " ------------------------------------------------------------------------------------------------------
+          var addChar = '"';
+          charOrder += line.substr(
+            lastIndex,
+            line.indexOf('"', lastIndex) - lastIndex + 1
+          );
+          if (options.verboseLevel > 1) {
+            console.log(
+              `[33mEscape Quote, got ${line.substr(
+                lastIndex,
+                line.indexOf('"', lastIndex) - lastIndex + 1
+              )}[0m`
+            );
+            console.log(`Changing lastIndex:\n{ before: ${lastIndex}`);
+          }
+          lastIndex = line.indexOf('"', lastIndex) + 1;
+          if (options.verboseLevel > 1) {
+            console.log(`  after: ${lastIndex} }`);
+          }
+        } else if (_getValue) {
+          // char : ------------------------------------------------------------------------------------------------------
+          var addChar = ",";
+          if (
+            line
+              .substr(lastIndex, line.length)
+              .replace(/[ ]/g, "")
+              .startsWith("[")
+          ) {
+            // ARRAY??
+            var addstr = line.substr(
+              lastIndex,
+              line.indexOf("]", lastIndex) - lastIndex
+            );
+            if (!addstr.endsWith("]")) addstr += "]";
+            charOrder += addstr;
+            if (options.verboseLevel > 1) {
+              console.log(`[33mEscape getValue, got ${addstr}[0m`);
+              console.log(`Changing lastIndex:\n{ before: ${lastIndex}`);
+            }
+            lastIndex = line.indexOf("]", lastIndex) + 1;
+            if (options.verboseLevel > 1) {
+              console.log(`  after: ${lastIndex} }`);
+            }
+          } else {
+            if (line.indexOf(",", lastIndex) < 0) {
+              // NON ARRAY??
+              charOrder += line.substr(lastIndex, line.length) + ",";
+              if (options.verboseLevel > 1) {
+                console.log(
+                  `[33mEscape getValue, got ${
+                    line.substr(lastIndex, line.length) + ","
+                  }[0m`
+                );
+                console.log(`Changing lastIndex:\n{ before: ${lastIndex}`);
+              }
+              lastIndex = Infinity;
+              if (options.verboseLevel > 1) {
+                console.log(`  after: ${lastIndex} }`);
+              }
+            } else {
+              charOrder += line.substr(
+                lastIndex,
+                line.indexOf(",", lastIndex) - lastIndex + 1
+              );
+              if (options.verboseLevel > 1) {
+                console.log(
+                  `[33mEscape getValue, got ${line.substr(
+                    lastIndex,
+                    line.indexOf(",", lastIndex) - lastIndex + 1
+                  )}[0m`
+                );
+                console.log(`Changing lastIndex:\n{ before: ${lastIndex}`);
+              }
+              lastIndex = line.indexOf(",", lastIndex) + 1;
+              if (options.verboseLevel > 1) {
+                console.log(`  after: ${lastIndex} }`);
+              }
+            }
+          }
+        } else {
+          // else anything ------------------------------------------------------------------------------------------------------
+          _chars.forEach((char) => {
+            if (line.includes(char)) {
+              if (line.indexOf(char, lastIndex) >= 0) {
+                charList.push({
+                  index: line.indexOf(char, lastIndex),
+                  char: char,
+                });
+                indexList.push(line.indexOf(char, lastIndex));
+              }
+            }
+          });
+
+          if (indexList.length > 0) {
+            var addChar = charList.find(
+              (charObj) => charObj.index == Math.min(...indexList)
+            ).char;
+
+            charOrder += addChar == null ? "" : addChar;
+            if (options.verboseLevel > 1) {
+              console.log(
+                `[33mEscape General Char ${addChar} at ${
+                  line.indexOf(addChar, lastIndex) - lastIndex
+                }[0m`
+              );
+            }
+          }
+
+          if (options.verboseLevel > 1) {
+            console.log(`Changing lastIndex:\n{ before: ${lastIndex}`);
+          }
+          lastIndex = Math.min(...indexList) + 1;
+          if (options.verboseLevel > 1) {
+            console.log(`  after: ${lastIndex} }`);
+          }
         }
-        /**
-         * },\n		"actions": [
-         */
-        data = data
-          .replace('"settings":{', '"settings":\n	{\n		')
-          .replace('},\n		"actions":[', '\n	},\n	"actions":\n	[\n		')
-          .replace("]}", "\n	]\n}")
-          .replace(/({")/g, '{ "')
-          .replace(/[,]/g, ", ")
-          .replace(/(":)/g, '": ')
-          .replace(/[}]/g, " }")
-          .replace(/(false)/g, '"Disabled"')
-          .replace(/(true)/g, '"Enabled"');
+        if (addChar == '"') _isQuoteOpen = !_isQuoteOpen;
+        if (addChar == ":") _getValue = true;
+        if (addChar == ",") _getValue = false;
 
-        fs.writeFileSync(location, data);
-        resolve();
-      } catch (e) {
-        reject(new Error(e));
+        if (lastIndex <= 0 || lastIndex >= line.length || !isFinite(lastIndex))
+          break;
+      }
+
+      mapData += charOrder;
+    });
+
+    rl.on("close", () => {
+      if (runEvent) {
+        mapData = mapData
+          .replace(/(,})/g, "}")
+          .replace(/({,)/g, "{")
+          .replace(/(,])/g, "]")
+          .replace(/(]{)/g, "[{");
+        try {
+          mapData = JSON.parse(mapData);
+          timeEnded = new Date().getTime();
+          var $callback = {
+            time: timeEnded - timeStarted,
+            map: mapData,
+          };
+          return callback($callback);
+        } catch (err) {
+          timeEnded = new Date().getTime();
+          var $callback = {
+            time: timeEnded - timeStarted,
+            map: null,
+          };
+          return callback($callback, Error(err));
+        }
       }
     });
   },
+
+  /* ================================================================================================================== */
+
+  export: function (file, mapData, callback, options) {
+    if (options == null) options = { verboseLevel: 0 };
+    mapData = JSON.stringify(mapData);
+
+    // variables
+    var timeStarted = new Date().getTime();
+    var indentStr = "	";
+    var settingsIndex = mapData.indexOf("settings");
+    var actionsIndex = mapData.indexOf("actions");
+
+    if (actionsIndex > 0) {
+      // fetch file
+      mapData = mapData.replace(/(:)/g, ": ").replace(/[,]/g, ", ");
+      while (true) {
+        actionsIndex = mapData.indexOf("actions");
+        if (mapData.indexOf('{"') < settingsIndex) {
+          mapData = mapData.replace('{"', `{\n${indentStr}"`); // { and {\n overlaps.
+        } else if (mapData.indexOf(', "') < actionsIndex) {
+          mapData = mapData.replace(
+            ', "',
+            `, \n${indentStr.repeat(
+              mapData.indexOf(', "') > settingsIndex ? 2 : 1
+            )}"`
+          );
+        } else {
+          mapData = mapData
+            .replace(`}, \n		"actions": [{`, `\n	}, \n	"actions":\n	[\n		{ `)
+            .replace(`	"settings": {`, `"settings":\n	{\n		`)
+            .replace(/(}, {)/g, " }, \n		{ ")
+            .replace("}]}", " }\n	]\n}");
+          break;
+        }
+      }
+
+      // end
+      fs.writeFileSync(file, mapData);
+      var timeEnded = new Date().getTime();
+      var $callback = {
+        time: timeEnded - timeStarted,
+        map: mapData,
+      };
+      callback($callback);
+    } else {
+      // end
+      fs.writeFileSync(file, mapData);
+      var timeEnded = new Date().getTime();
+      var $callback = {
+        time: timeEnded - timeStarted,
+        map: mapData,
+      };
+      callback($callback);
+    }
+  },
 };
+
+/**
+ *
+ * {
+ *    "start": "end"
+ * }
+ *
+ *
+ *
+ */
