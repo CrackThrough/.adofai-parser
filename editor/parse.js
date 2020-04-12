@@ -6,6 +6,7 @@ module.exports = {
    * Imports a .adofai map file
    * @param {path} file
    * @param {callback} callback
+   * @param {Object} options
    */
   import: function (file, callback, options) {
     if (options == null) options = { verboseLevel: 0 };
@@ -206,8 +207,25 @@ module.exports = {
 
   /* ================================================================================================================== */
 
+  /**
+   * Exports a .adofai map file
+   * @param {path} file
+   * @param {Object} mapData
+   * @param {callback} callback
+   * @param {Object} options
+   */
   export: function (file, mapData, callback, options) {
     if (options == null) options = { verboseLevel: 0 };
+
+    const mapDeep = (obj) => {
+      for (var prop in obj) {
+        if (typeof obj[prop] === "object") mapDeep(obj[prop]);
+        else if (obj[prop] === false) obj[prop] = "Disabled";
+        else if (obj[prop] === true) obj[prop] = "Enabled";
+      }
+    };
+    mapDeep(mapData);
+
     mapData = JSON.stringify(mapData);
 
     // variables
@@ -222,8 +240,11 @@ module.exports = {
       while (true) {
         actionsIndex = mapData.indexOf("actions");
         if (mapData.indexOf('{"') < settingsIndex) {
-          mapData = mapData.replace('{"', `{\n${indentStr}"`); // { and {\n overlaps.
-        } else if (mapData.indexOf(', "') < actionsIndex) {
+          mapData = mapData.replace('{"', `{\n${indentStr}"`);
+        } else if (
+          mapData.indexOf(', "') < actionsIndex &&
+          mapData.indexOf(', "') > 0
+        ) {
           mapData = mapData.replace(
             ', "',
             `, \n${indentStr.repeat(
@@ -235,7 +256,8 @@ module.exports = {
             .replace(`}, \n		"actions": [{`, `\n	}, \n	"actions":\n	[\n		{ `)
             .replace(`	"settings": {`, `"settings":\n	{\n		`)
             .replace(/(}, {)/g, " }, \n		{ ")
-            .replace("}]}", " }\n	]\n}");
+            .replace("}]}", " }\n	]\n}")
+            .replace('}, \n		"actions": []}', `\n	}, \n	"actions":\n	[\n	]\n}`);
           break;
         }
       }
