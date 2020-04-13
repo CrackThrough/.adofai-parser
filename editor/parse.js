@@ -1,5 +1,6 @@
 const readline = require("readline");
 const fs = require("fs");
+const pathCalc = require("path");
 
 module.exports = {
   /**
@@ -10,6 +11,12 @@ module.exports = {
    */
   import: function (file, callback, options) {
     if (options == null) options = { verboseLevel: 0 };
+
+    // accurate path
+    var fixedPath = pathCalc.parse(file);
+    fixedPath.dir = `${process.cwd()}\\${fixedPath.dir}`;
+    fixedPath = pathCalc.format(fixedPath);
+    file = fixedPath;
 
     // variables
     var timeStarted = new Date().getTime();
