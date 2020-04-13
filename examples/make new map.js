@@ -22,7 +22,7 @@ function pickRandom(array) {
 }
 
 // set pathData
-map.pathData = randomString(keys._pathData, 20);
+map.pathData = randomString(keys._pathData, 200);
 
 // charArray for hex codes
 let hexChars = "0123456789abcdef".split("");
@@ -77,9 +77,13 @@ map.settings.volume = 100;
 map.settings.zoom = 130;
 
 // export with callback
-adofai.export("./exports/newTestOutput.adofai", map, (_callback, err) => {
-  if (err) throw err;
-  console.log("Exported map file!");
+adofai.export(
+  "C:/Program Files (x86)/Steam/steamapps/common/A Dance of Fire and Ice/A Dance of Fire and Ice_Data/Maps/Documentation/newTestOutput.adofai",
+  map,
+  (_callback, err) => {
+    if (err) throw err;
+    console.log("Exported map file!");
 
-  // done
-});
+    // done
+  }
+);

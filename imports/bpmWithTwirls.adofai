@@ -1,0 +1,53 @@
+﻿{
+	"pathData": "RRRRRRRRRRRRRRR", 
+	"settings":
+	{
+		"version": 2, 
+		"artist": "", 
+		"song": "", 
+		"author": ".adofai-parser", 
+		"separateCountdownTime": "Enabled",
+		"songFilename": "", 
+		"bpm": 186, 
+		"volume": 100, 
+		"offset": 0, 
+		"pitch": 100, 
+		"hitsound": "Kick", 
+		"hitsoundVolume": 100,
+		"trackColorType": "Single", 
+		"trackColor": "debb7b", 
+		"secondaryTrackColor": "ffffff", 
+		"trackColorAnimDuration": 2, 
+		"trackColorPulse": "None", 
+		"trackPulseLength": 10, 
+		"trackStyle": "Standard", 
+		"trackAnimation": "Grow", 
+		"beatsAhead": 7, 
+		"trackDisappearAnimation": "Shrink", 
+		"beatsBehind": 0,
+		"backgroundColor": "000000", 
+		"bgImage": "", 
+		"bgImageColor": "ffffff", 
+		"parallax": [100, 100], 
+		"bgDisplayMode": "FitToScreen", 
+		"lockRot": "Disabled", 
+		"loopBG": "Disabled", 
+		"unscaledSize": 100,
+		"relativeTo": "Player", 
+		"position": [0, 0], 
+		"rotation": 0, 
+		"zoom": 100,
+		"bgVideo": "", 
+		"loopVideo": "Disabled", 
+		"vidOffset": 0, 
+		"floorIconOutlines": "Disabled", 
+		"stickToFloors": "Disabled", 
+		"planetEase": "Linear", 
+		"planetEaseParts": 1
+	},
+	"actions":
+	[
+		{ "floor": 4, "eventType": "SetSpeed", "speedType": "Bpm", "beatsPerMinute": 185.7138, "bpmMultiplier": 1 },
+		{ "floor": 4, "eventType": "Twirl", }
+	]
+}

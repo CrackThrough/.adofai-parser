@@ -224,6 +224,12 @@ module.exports = {
   export: function (file, mapData, callback, options) {
     if (options == null) options = { verboseLevel: 0 };
 
+    // accurate path
+    var fixedPath = pathCalc.parse(file);
+    fixedPath.dir = `${process.cwd()}\\${fixedPath.dir}`;
+    fixedPath = pathCalc.format(fixedPath);
+    file = fixedPath;
+
     const mapDeep = (obj) => {
       for (var prop in obj) {
         if (typeof obj[prop] === "object") mapDeep(obj[prop]);

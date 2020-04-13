@@ -2,7 +2,7 @@
 const adofai = require("adofai-parser");
 
 // import with callback
-adofai.import("./imports/test.adofai", (_callback, err) => {
+adofai.import("../imports/bpmWithTwirls.adofai", (_callback, err) => {
   if (err) throw err;
   // defining map as alternate variable
   var map = _callback.map;
