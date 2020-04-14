@@ -1,6 +1,6 @@
 {
   "name": "adofai-parser",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "description": "This is a nodejs package parsing custom .adofai files*(most likely called \"levels\")* from a steam game called **\"[A Dance of Fire and Ice](https://store.steampowered.com/app/977950/A_Dance_of_Fire_and_Ice/)\"** developed by **\"[7th Beat Games](http://7thbe.at/)\"**.",
   "main": "index.js",
   "directories": {

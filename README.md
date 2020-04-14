@@ -14,10 +14,12 @@ const adofai = require("adofai-parser");
 var adofaiOptions = { verboseLevel: 0 }; // optional, can be 0 to 2
 
 adofai.import(
-  "file path", (cb, err) => {
+  "file path",
+  (cb, err) => {
     if (err) throw err;
     console.log(`Parsing is finished! It took ${cb.time}ms!`);
-  }, adofaiOptions
+  },
+  adofaiOptions
 );
 ```
 
@@ -40,6 +42,9 @@ adofai.export(
 
 #### Discord: @CrackThrough#5067
 
+#### Discord Server: [Invition link](https://discord.gg/wQKvwcV)
+
 ##
 
 I hope this can help some people trying to make a better editor or a simple macro!
+I am open to any kind of feedbacks.. please give me any ideas to improve this creation!
